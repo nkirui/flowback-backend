@@ -1,3 +1,4 @@
+ pg_ctl -D /opt/homebrew/var/postgres start
  source venv/bin/activate  
  python manage.py migrate
  python manage.py runserver
