@@ -88,7 +88,7 @@ INSTALLED_APPS = [
     'flowback.kanban',
     'flowback.notification',
     'flowback.comment',
-    'flowback.schedule'
+    'flowback.schedule',
     'graphqlPlugin'
 ] + env('INTEGRATIONS')
 
