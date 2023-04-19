@@ -89,14 +89,12 @@ INSTALLED_APPS = [
     'flowback.notification',
     'flowback.comment',
     'flowback.schedule',
-    'graphqlPlugin'
+    'graphqlPlugin',
+    'graphene_django'
 ] + env('INTEGRATIONS')
 
 GRAPHENE = {
-    'SCHEMA': 'graphqlPlugin.config.GraphqlConfig.graphql_schema',
-    'MIDDLEWARE': [
-        'graphqlPlugin_jwt.middleware.JSONWebTokenMiddleware',
-    ],
+    "SCHEMA": "graphqlPlugin.schema.schema"
 }
 
 REST_FRAMEWORK = {
@@ -120,7 +118,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'graphqlPlugin_jwt.middleware.JSONWebTokenMiddleware',
 ]
 
 ROOT_URLCONF = 'backend.urls'

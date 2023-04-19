@@ -1,19 +1,15 @@
-import graphene
-from graphene_django.types import DjangoObjectType
-from graphene_django.filter import DjangoFilterConnectionField
-from django.contrib.contenttypes.models import ContentType
+from graphene import ObjectType, String, Schema
 
-class ContentTypeType(DjangoObjectType):
-    class Meta:
-        model = ContentType
+class Query(ObjectType):
+    # this defines a Field `hello` in our Schema with a single Argument `first_name`
+    # By default, the argument name will automatically be camel-based into firstName in the generated schema
+    register = String(username=String(),email=String())
 
-class Query(graphene.ObjectType):
-    content_types = DjangoFilterConnectionField(ContentTypeType)
+    # our Resolver method takes the GraphQL context (root, info) as well as
+    # Argument (first_name) for the Field and returns data for the query Response
+    def resolve_register(root, info, username,email):
+        return f'{username} {email}!'
 
-    def resolve_content_types(self, info, **kwargs):
-        return ContentType.objects.all()
+   
 
-class Mutation(graphene.ObjectType):
-    pass
-
-schema = graphene.Schema(query=Query, mutation=Mutation)
+schema = Schema(query=Query)

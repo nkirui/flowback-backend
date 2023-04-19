@@ -23,6 +23,7 @@ from flowback.poll.urls import group_poll_patterns, poll_patterns
 from flowback.chat.urls import chat_patterns
 from flowback.notification.urls import notification_patterns
 from django.conf.urls.static import static
+from graphqlPlugin.urls import urlpatterns as up
 
 api_urlpatterns = [
     path('', include((user_patterns, 'user'))),
@@ -32,7 +33,8 @@ api_urlpatterns = [
     path('group/poll/', include((poll_patterns, 'poll'))),
     path('notification/', include((notification_patterns, 'notification'))),
     path('home/polls', PollListApi.as_view(), name='home_polls'),
-    path('poll/user/schedule', PollUserScheduleListAPI.as_view(), name='poll_user_schedule')
+    path('poll/user/schedule', PollUserScheduleListAPI.as_view(), name='poll_user_schedule'),
+    path('graphql/', include((up, 'graphql_plugin')))
 ]
 
 urlpatterns = [
