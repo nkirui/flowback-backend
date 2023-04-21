@@ -1,0 +1,13 @@
+ pg_ctl -D /opt/homebrew/var/postgres start
+ source venv/bin/activate  
+ python manage.py migrate
+ python manage.py runserver
+
+
+ query {
+  register(username: "narender",email: "narendersaini32@gmail.com")
+}
+
+query {
+  registerVerify(verificationCode: "4838de2f-2dc1-4c92-a34e-74ac14ed80a7",password: "Gtavicecity@21")
+}
