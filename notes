@@ -17,3 +17,7 @@ query {
     token
   }
 }
+
+query {
+  forgetPassword(email: "narendersaini32@gmail.com")
+}

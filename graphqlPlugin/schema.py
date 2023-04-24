@@ -2,7 +2,7 @@ from graphql_jwt.decorators import login_required
 from graphql_jwt.shortcuts import get_token
 from django.contrib.auth import authenticate
 from graphene import ObjectType, String, Schema, Mutation
-from flowback.user.services import user_create,user_create_verify
+from flowback.user.services import user_create,user_create_verify,user_forgot_password
 
 class LoginMutation(Mutation):
     token = String()
@@ -25,6 +25,7 @@ class Query(ObjectType):
     # By default, the argument name will automatically be camel-based into firstName in the generated schema
     register = String(username=String(),email=String())
     registerVerify = String(verificationCode=String(),password=String())
+    forgetPassword = String(email=String())
     login = LoginMutation.Field()
     # Call the function with the provided arguments
     # our Resolver method takes the GraphQL context (root, info) as well as
@@ -36,5 +37,8 @@ class Query(ObjectType):
     def resolve_registerVerify(root, info, verificationCode,password):
         user_create_verify(verification_code=verificationCode, password=password)
         return "Verified Successfully"
+    def resolve_forgetPassword(root, info, email):
+        user_forgot_password(email=email)
+        return "Success"
 
 schema = Schema(query=Query)
