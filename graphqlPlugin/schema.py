@@ -3,7 +3,8 @@ from graphql_jwt.shortcuts import get_token
 from django.contrib.auth import authenticate
 from graphene import ObjectType, String, Schema, Mutation
 from flowback.user.services import user_create,user_create_verify,user_forgot_password,user_forgot_password_verify
-from flowback.user.views.user import ( UserGetApi )
+from flowback.user.selectors import get_user
+
 class LoginMutation(Mutation):
     token = String()
 
@@ -41,6 +42,6 @@ class Query(ObjectType):
         return "Success"
 
     def resolve_getUser(root, info,id):
-        return UserGetApi.as_view(id=id)
+        return get_user(user=id)
 
 schema = Schema(query=Query)
