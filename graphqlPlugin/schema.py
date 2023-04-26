@@ -1,9 +1,26 @@
 from graphql_jwt.decorators import login_required
 from graphql_jwt.shortcuts import get_token
 from django.contrib.auth import authenticate
-from graphene import ObjectType, String, Schema, Mutation
+from graphene import ObjectType, String, Schema, Mutation, Int, List, ID, Field
 from flowback.user.services import user_create,user_create_verify,user_forgot_password,user_forgot_password_verify
-from flowback.user.selectors import get_user
+from flowback.user.selectors import get_user,user_list
+
+class UserType(ObjectType):
+    id = ID()
+    email = String()
+    username = String()
+    profile_image = String()
+    banner_image = String()
+    bio = String()
+    website = String()
+
+# class UserListType(ObjectType):
+#     limit = Int()
+#     offset = Int()
+#     count = Int()
+#     next = String()
+#     previous = String()
+#     results = List(UserType)
 
 class LoginMutation(Mutation):
     token = String()
@@ -28,7 +45,7 @@ class Query(ObjectType):
     login = LoginMutation.Field()
     forgetPasswordVerify = String(verificationCode=String(),password=String())
     getUser = String(id=String())
-    
+    getUserList = List(UserType,fetched_by=Int())
     def resolve_register(root, info, username,email):
         user_create(username=username, email=email)
         return "Registered"
@@ -43,5 +60,8 @@ class Query(ObjectType):
 
     def resolve_getUser(root, info,id):
         return get_user(user=id)
+        
+    def resolve_getUserList(root, info,fetched_by):
+        return user_list(fetched_by=fetched_by)
 
 schema = Schema(query=Query)

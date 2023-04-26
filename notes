@@ -25,3 +25,13 @@ query {
 query {
   forgetPasswordVerify(password: "Gtavicecity@21",verificationCode:"c961cce2-19e4-4706-80c4-58173b02c4b5")
 }
+
+query {
+  getUser(id:"1")
+}
+
+query {
+  getUserList(fetchedBy:1) {
+   username
+email
+  }}
