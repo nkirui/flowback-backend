@@ -32,6 +32,7 @@ class Poll(BaseModel):
     description = models.TextField()
     poll_type = models.IntegerField(choices=PollType.choices)
     tag = models.ForeignKey(GroupTags, on_delete=models.CASCADE, null=True, blank=True)
+    pinned = models.BooleanField(default=False)
 
     # Determines the visibility of this poll
     active = models.BooleanField(default=True)
@@ -57,9 +58,6 @@ class Poll(BaseModel):
     dynamic = models.BooleanField()
 
     def clean(self):
-        if self.start_date < timezone.now():
-            self.start_date = timezone.now()
-
         labels = ((self.start_date, 'start date'),
                   (self.proposal_end_date, 'proposal end date'),
                   (self.vote_start_date, 'vote start date'),
@@ -170,10 +168,11 @@ class PollPredictionStatement(PredictionStatement):
             raise ValidationError('Poll ends earlier than prediction statement end date')
 
     @receiver(post_delete, sender=PollProposal)
-    def clean_prediction_statement(self, instance: PollProposal, **kwargs):
-        self.objects.annotate(segment_count=Count('pollpredictionstatementsegment'))\
-            .filter(segment_count__lt=1)\
-            .delete()
+    def clean_prediction_statement(sender, instance: PollProposal, **kwargs):
+        PollPredictionStatement.objects.filter(poll=instance.poll)\
+                                        .annotate(segment_count=Count('pollpredictionstatementsegment'))\
+                                        .filter(segment_count__lt=1)\
+                                        .delete()
 
 
 class PollPredictionStatementSegment(PredictionStatementSegment):
@@ -191,9 +190,9 @@ class PollPrediction(Prediction):
     created_by = models.ForeignKey(GroupUser, on_delete=models.CASCADE)
 
     @receiver(post_save, sender=PredictionStatement)
-    def reset_prediction_prediction(self, instance: PredictionStatement, **kwargs):
-        self.objects.filter(prediction_statement=instance).delete()
+    def reset_prediction_prediction(sender, instance: PredictionStatement, **kwargs):
+        PollPrediction.objects.filter(prediction_statement=instance).delete()
 
     @receiver(post_save, sender=PollProposal)
-    def reset_prediction_proposal(sender, instance: PollProposal, **kwargs): # TODO param must be sender, but needs prediction
+    def reset_prediction_proposal(sender, instance: PollProposal, **kwargs):
         PollPrediction.objects.filter(prediction_statement__pollpredictionstatementsegment__proposal=instance).delete()

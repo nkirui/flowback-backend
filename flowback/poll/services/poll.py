@@ -9,7 +9,10 @@ from datetime import datetime
 
 from flowback.poll.services.vote import poll_proposal_vote_count
 
-poll_notification = NotificationManager(sender_type='poll', possible_categories=['timeline', 'poll'])
+poll_notification = NotificationManager(sender_type='poll', possible_categories=['timeline',
+                                                                                 'poll',
+                                                                                 'comment_self',
+                                                                                 'comment_all'])
 
 
 def poll_notification_subscribe(*, user_id: int, poll_id: int, categories: list[str]):
@@ -31,13 +34,18 @@ def poll_create(*, user_id: int,
                 poll_type: int,
                 public: bool,
                 tag: int,
+                pinned: bool,
                 dynamic: bool
                 ) -> Poll:
     group_user = group_user_permissions(user=user_id, group=group_id, permissions=['create_poll', 'admin'])
+
+    if not group_user.is_admin and pinned:
+        raise ValidationError('Permission denied')
+
     poll = Poll(created_by=group_user, title=title, description=description,
                 start_date=start_date, proposal_end_date=proposal_end_date, vote_start_date=vote_start_date,
                 delegate_vote_end_date=delegate_vote_end_date, vote_end_date=end_date, end_date=end_date,
-                poll_type=poll_type, public=public, tag_id=tag, dynamic=dynamic)
+                poll_type=poll_type, public=public, tag_id=tag, pinned=pinned, dynamic=dynamic)
     poll.full_clean()
     poll.save()
 
@@ -77,7 +85,10 @@ def poll_update(*, user_id: int, poll_id: int, data) -> Poll:
     if not poll.created_by == group_user or not group_user.is_admin:
         raise ValidationError('Permission denied')
 
-    non_side_effect_fields = ['title', 'description']
+    if not group_user.is_admin and data.get('pinned', False):
+        raise ValidationError('Permission denied')
+
+    non_side_effect_fields = ['title', 'description', 'pinned']
 
     poll, has_updated = model_update(instance=poll,
                                      fields=non_side_effect_fields,
@@ -92,15 +103,18 @@ def poll_delete(*, user_id: int, poll_id: int) -> None:
     group_id = poll.created_by.group.id
     group_user = group_user_permissions(user=user_id, group=group_id)
 
-    if not poll.created_by == group_user or not group_user.is_admin:
-        raise ValidationError('Permission denied')
+    force_deletion_access = group_user_permissions(group_user=group_user, permissions=['admin', 'force_delete_poll'],
+                                                   raise_exception=False)
 
-    if (poll.created_by == group_user and not group_user.is_admin
-    and not group_user.group.created_by == group_user) and poll.start_date < timezone.now():
-        raise ValidationError('Only group admins (or above) can delete ongoing polls')
+    if poll.created_by == group_user and not force_deletion_access:
+        if poll.start_date < timezone.now():
+            raise ValidationError("Unable to delete ongoing polls")
 
-    if poll.finished:
-        raise ValidationError('Only site admins (or above) can delete finished polls')
+        if poll.finished:
+            raise ValidationError("Unable to delete finished polls")
+
+    else:
+        group_user_permissions(group_user=group_user, permissions=['admin', 'force_delete_poll'])
 
     # Remove future notifications
     if timezone.now() <= poll.start_date:
@@ -159,8 +173,8 @@ def poll_refresh_cheap(*, poll_id: int) -> None:
             event = PollProposal.objects.filter(poll=poll).order_by('score')
             if event.exists():
                 event = event.first().pollproposaltypeschedule
-                group_schedule.create_event(schedule_id=poll.group.schedule_id,
-                                            title=poll.name,
+                group_schedule.create_event(schedule_id=poll.created_by.group.schedule_id,
+                                            title=poll.title,
                                             start_date=event.start_date,
                                             end_date=event.end_date,
                                             origin_name='poll',

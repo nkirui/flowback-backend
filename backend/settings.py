@@ -18,10 +18,14 @@ env = environ.Env(DEBUG=(bool, False),
                   SECURE_PROXY_SSL_HEADERS=(bool, False),
                   DJANGO_SECRET=str,
                   FLOWBACK_URL=(str, None),
+                  INSTANCE_NAME=(str, 'Flowback'),
                   PG_SERVICE=(str, 'flowback'),
                   REDIS_IP=(str, 'localhost'),
                   REDIS_PORT=(str, '6379'),
+                  RABBITMQ_BROKER_URL=str,
                   URL_SUBPATH=(str, ''),
+                  DISABLE_DEFAULT_USER_REGISTRATION=(bool, False),
+                  FLOWBACK_DEFAULT_GROUP_JOIN=(str, None),
                   FLOWBACK_ALLOW_GROUP_CREATION=(bool, True),
                   FLOWBACK_GROUP_ADMIN_USER_LIST_ACCESS_ONLY=(bool, False),
                   FLOWBACK_DEFAULT_PERMISSION=(str, 'rest_framework.permissions.IsAuthenticated'),
@@ -50,6 +54,7 @@ SECRET_KEY = env('DJANGO_SECRET')
 DEBUG = env('DEBUG')
 
 FLOWBACK_URL = env('FLOWBACK_URL')
+INSTANCE_NAME = env('INSTANCE_NAME')
 PG_SERVICE = env('PG_SERVICE')
 
 ALLOWED_HOSTS = [FLOWBACK_URL or "*"]
@@ -80,6 +85,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_extensions',
     'rest_framework.authtoken',
+    'django_celery_beat',
     'pgtrigger',
     'flowback.user',
     'flowback.group',
@@ -88,8 +94,10 @@ INSTALLED_APPS = [
     'flowback.kanban',
     'flowback.notification',
     'flowback.comment',
-    'flowback.schedule'
+    'flowback.schedule',
 ] + env('INTEGRATIONS')
+
+CELERY_BROKER_URL = env('RABBITMQ_BROKER_URL')
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -102,6 +110,13 @@ REST_FRAMEWORK = {
 }
 
 AUTH_USER_MODEL = 'user.User'
+DISABLE_DEFAULT_USER_REGISTRATION = env('DISABLE_DEFAULT_USER_REGISTRATION')
+
+if data := env('FLOWBACK_DEFAULT_GROUP_JOIN'):
+    FLOWBACK_DEFAULT_GROUP_JOIN = [int(i) for i in env('FLOWBACK_DEFAULT_GROUP_JOIN').split(',')]
+
+else:
+    FLOWBACK_DEFAULT_GROUP_JOIN = []
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',

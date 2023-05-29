@@ -17,9 +17,11 @@ class KanbanEntryListApi(APIView):
         origin_type = serializers.CharField(required=False)
         origin_id = serializers.IntegerField(required=False)
         created_by = serializers.IntegerField(required=False)
+        order_by = serializers.CharField(required=False)
         assignee = serializers.IntegerField(required=False)
         title__icontains = serializers.CharField(required=False)
         description__icontains = serializers.CharField(required=False)
+        priority = serializers.ChoiceField((1, 2, 3, 4, 5), required=False)
         tag = serializers.ChoiceField((1, 2, 3, 4, 5), required=False)
 
     class OutputSerializer(serializers.ModelSerializer):
@@ -30,19 +32,34 @@ class KanbanEntryListApi(APIView):
 
         assignee = UserSerializer(read_only=True, required=False)
         created_by = UserSerializer(read_only=True)
+        origin_type = serializers.CharField(source='kanban.origin_type')
+        origin_id = serializers.IntegerField(source='kanban.origin_id')
+        priority = serializers.IntegerField()
+        end_date = serializers.DateTimeField(required=False)
 
         class Meta:
             model = KanbanEntry
-            fields = ('id', 'created_by', 'assignee', 'title', 'description', 'tag')
+            fields = ('id',
+                      'origin_type',
+                      'origin_id',
+                      'created_by',
+                      'assignee',
+                      'title',
+                      'description',
+                      'end_date',
+                      'priority',
+                      'tag')
 
 
 class KanbanEntryCreateAPI(APIView):
     class InputSerializer(serializers.ModelSerializer):
-        assignee = serializers.IntegerField(source='assignee_id', required=False)
+        assignee = serializers.IntegerField(source='assignee_id', required=False, allow_null=True)
+        end_date = serializers.DateTimeField(required=False, allow_null=True)
+        priority = serializers.IntegerField(default=3)
 
         class Meta:
             model = KanbanEntry
-            fields = ('assignee', 'title', 'description', 'tag')
+            fields = ('assignee', 'title', 'description', 'tag', 'priority', 'end_date')
 
 
 class KanbanEntryUpdateAPI(APIView):
@@ -51,6 +68,7 @@ class KanbanEntryUpdateAPI(APIView):
         assignee = serializers.IntegerField(required=False, source='assignee_id')
         title = serializers.CharField(required=False)
         description = serializers.CharField(required=False)
+        priority = serializers.ChoiceField((1, 2, 3, 4, 5), required=False)
         tag = serializers.ChoiceField((1, 2, 3, 4, 5), required=False)
 
 

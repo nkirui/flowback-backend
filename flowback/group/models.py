@@ -2,7 +2,9 @@ import uuid
 
 from django.db.models.signals import post_save, post_delete
 
+from backend.settings import FLOWBACK_DEFAULT_GROUP_JOIN
 from flowback.common.models import BaseModel
+from flowback.common.services import get_object
 from flowback.kanban.models import Kanban
 from flowback.kanban.services import kanban_create, kanban_subscription_create, kanban_subscription_delete
 from flowback.schedule.models import Schedule
@@ -41,19 +43,30 @@ class Group(BaseModel):
     jitsi_room = models.UUIDField(unique=True, default=uuid.uuid4)
 
     @classmethod
-    # Updates Schedule name
     def post_save(cls, instance, created, update_fields, *args, **kwargs):
         if created:
             instance.schedule = create_schedule(name=instance.name, origin_name='group', origin_id=instance.id)
             instance.kanban = kanban_create(name=instance.name, origin_type='group', origin_id=instance.id)
             instance.save()
             return
-        fields = [field.name for field in update_fields]
-        if 'name' in fields:
-            instance.schedule.name = instance.name
-            instance.kanban.name = instance.name
-            instance.schedule.save()
-            instance.kanban.save()
+
+        if update_fields:
+            fields = [field.name for field in update_fields]
+
+            if 'name' in fields:
+                instance.schedule.name = instance.name
+                instance.kanban.name = instance.name
+                instance.schedule.save()
+                instance.kanban.save()
+
+    @classmethod
+    def user_post_save(cls, instance: User, created: bool, *args, **kwargs):
+        if created and FLOWBACK_DEFAULT_GROUP_JOIN:
+            for group_id in FLOWBACK_DEFAULT_GROUP_JOIN:
+                if get_object(Group, id=group_id, raise_exception=False):
+                    group_user = GroupUser(user=instance, group_id=group_id)
+                    group_user.full_clean()
+                    group_user.save()
 
     @classmethod
     def post_delete(cls, instance, *args, **kwargs):
@@ -62,6 +75,7 @@ class Group(BaseModel):
 
 
 post_save.connect(Group.post_save, sender=Group)
+post_save.connect(Group.user_post_save, sender=User)
 post_delete.connect(Group.post_delete, sender=Group)
 
 
@@ -74,6 +88,9 @@ class GroupPermissions(BaseModel):
     allow_vote = models.BooleanField(default=True)
     kick_members = models.BooleanField(default=False)
     ban_members = models.BooleanField(default=False)
+    force_delete_poll = models.BooleanField(default=False)
+    force_delete_proposal = models.BooleanField(default=False)
+    force_delete_comment = models.BooleanField(default=False)
 
 
 # Permission Tags for each group, and for user to put on delegators

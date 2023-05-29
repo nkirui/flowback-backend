@@ -34,6 +34,8 @@ class PollListApi(APIView):
     class FilterSerializer(serializers.Serializer):
         id = serializers.IntegerField(required=False)
         id_list = serializers.ListField(child=serializers.IntegerField(), required=False)
+        order_by = serializers.CharField(default='created_at_desc')
+        pinned = serializers.NullBooleanField(required=False, default=None)
 
         title = serializers.CharField(required=False)
         title__icontains = serializers.CharField(required=False)
@@ -51,6 +53,7 @@ class PollListApi(APIView):
         group_image = serializers.ImageField(source='created_by.group.image')
         tag_name = serializers.CharField(source='tag.tag_name')
         hide_poll_users = serializers.BooleanField(source='created_by.group.hide_poll_users')
+        total_comments = serializers.IntegerField()
 
         class Meta:
             model = Poll
@@ -75,7 +78,9 @@ class PollListApi(APIView):
                       'finished',
                       'result',
                       'participants',
-                      'dynamic')
+                      'pinned',
+                      'dynamic',
+                      'total_comments')
 
     def get(self, request, group: int = None):
         filter_serializer = self.FilterSerializer(data=request.query_params)
@@ -173,7 +178,7 @@ class PollCreateAPI(APIView):
         class Meta:
             model = Poll
             fields = ('title', 'description', 'start_date', 'proposal_end_date', 'vote_start_date',
-                      'delegate_vote_end_date', 'end_date', 'poll_type', 'public', 'tag', 'dynamic')
+                      'delegate_vote_end_date', 'end_date', 'poll_type', 'public', 'tag', 'pinned', 'dynamic')
 
     def post(self, request, group: int):
         serializer = self.InputSerializer(data=request.data)
@@ -185,6 +190,7 @@ class PollCreateAPI(APIView):
 class PollUpdateAPI(APIView):
     class InputSerializer(serializers.Serializer):
         title = serializers.CharField(required=False)
+        pinned = serializers.BooleanField(required=False)
         description = serializers.CharField(required=False)
 
     def post(self, request, poll: int):
@@ -466,7 +472,7 @@ class PollProposalDelegateVoteUpdateAPI(APIView):
 
 class PollCommentListAPI(CommentListAPI):
     class InputSerializer(CommentListAPI.InputSerializer):
-        poll_id = serializers.IntegerField()
+        poll_id = serializers.IntegerField(required=False)
 
     def get(self, request, poll: int):
         serializer = self.InputSerializer(data=request.data)
@@ -483,12 +489,12 @@ class PollCommentListAPI(CommentListAPI):
 
 class PollCommentCreateAPI(CommentCreateAPI):
     def post(self, request, poll: int):
-        serializer = self.InputSerializer()
+        serializer = self.InputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        poll_comment_create(author_id=request.user.id, poll_id=poll, **serializer.validated_data)
+        comment = poll_comment_create(author_id=request.user.id, poll_id=poll, **serializer.validated_data)
 
-        return Response(status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_200_OK, data=comment.id)
 
 
 class PollCommentUpdateAPI(CommentUpdateAPI):
@@ -499,14 +505,14 @@ class PollCommentUpdateAPI(CommentUpdateAPI):
         poll_comment_update(fetched_by=request.user.id,
                             poll_id=poll,
                             comment_id=comment_id,
-                            **serializer.validated_data)
+                            data=serializer.validated_data)
 
         return Response(status=status.HTTP_200_OK)
 
 
 class PollCommentDeleteAPI(CommentDeleteAPI):
     def post(self, request, poll: int, comment_id: int):
-        poll_comment_delete(fetched_by=request.user, poll_id=poll, comment_id=comment_id)
+        poll_comment_delete(fetched_by=request.user.id, poll_id=poll, comment_id=comment_id)
 
         return Response(status=status.HTTP_200_OK)
 
@@ -526,7 +532,6 @@ class PollPredictionStatementListAPI(APIView):
         user_vote_exists = serializers.BooleanField(required=False)
 
     class OutputSerializer(serializers.Serializer):
-
         id = serializers.IntegerField()
         poll_id = serializers.IntegerField()
         proposals = serializers.ListField(source='pollpredictionstatementsegment_id',

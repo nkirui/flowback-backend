@@ -97,7 +97,7 @@ def user_forgot_password_verify(*, verification_code: str, password: str):
 
 
 def user_update(*, user: User, data) -> User:
-    non_side_effects_fields = ['username', 'profile_image', 'banner_image', 'bio', 'website']
+    non_side_effects_fields = ['username', 'profile_image', 'banner_image', 'bio', 'website', 'email_notifications']
 
     user, has_updated = model_update(instance=user,
                                      fields=non_side_effects_fields,
@@ -147,12 +147,16 @@ def user_kanban_entry_create(*,
                              assignee_id: int,
                              title: str,
                              description: str,
-                             tag: int):
+                             priority: int,
+                             tag: int,
+                             end_date: timezone.datetime = None):
     return user_kanban.kanban_entry_create(origin_id=user_id,
                                            created_by_id=user_id,
                                            assignee_id=assignee_id,
                                            title=title,
                                            description=description,
+                                           priority=priority,
+                                           end_date=end_date,
                                            tag=tag)
 
 
