@@ -88,14 +88,8 @@ INSTALLED_APPS = [
     'flowback.kanban',
     'flowback.notification',
     'flowback.comment',
-    'flowback.schedule',
-    'graphqlPlugin',
-    'graphene_django'
+    'flowback.schedule'
 ] + env('INTEGRATIONS')
-
-GRAPHENE = {
-    "SCHEMA": "graphqlPlugin.schema.schema"
-}
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
