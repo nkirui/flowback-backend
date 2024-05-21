@@ -19,3 +19,10 @@ class Comment(BaseModel):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
     score = models.IntegerField(default=0)
 
+    def is_root_comment(self):
+        """Check if this comment is a root comment (no parent)"""
+        return self.parent is None
+
+    def get_children(self):
+        """Retrieve all direct child comments."""
+        return Comment.objects.filter(parent=self)

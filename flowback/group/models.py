@@ -29,6 +29,10 @@ class GroupFolder(BaseModel):
 
 
 class Group(BaseModel):
+
+    """
+    This is also serves as the community as used the frontend
+    """
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
     active = models.BooleanField(default=True)
 

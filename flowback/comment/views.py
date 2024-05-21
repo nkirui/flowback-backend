@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from flowback.comment.selectors import comment_list
-from flowback.comment.services import comment_create, comment_update, comment_delete
+from flowback.comment.services import comment_create, comment_update, comment_delete, comment_reply
 from flowback.common.pagination import LimitOffsetPagination, get_paginated_response
 from flowback.files.serializers import FileSerializer
 
@@ -74,6 +74,25 @@ class CommentCreateAPI(APIView):
         serializer.is_valid(raise_exception=True)
         comment = self.lazy_action.__func__(*args,
                                             author_id=request.user.id,
+                                            **kwargs,
+                                            **serializer.validated_data)
+
+        return Response(status=status.HTTP_200_OK, data=comment.id)
+
+
+class CommentReplyAPI(APIView):
+    lazy_action = comment_reply
+
+    class InputSerializer(serializers.Serializer):
+        parent_id = serializers.IntegerField(required=False)
+        message = serializers.CharField()
+        attachments = serializers.ListField(child=serializers.FileField(), required=False, max_length=10)
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.InputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        comment = self.lazy_action.__func__(*args,
+                                            user_id=request.user.id,
                                             **kwargs,
                                             **serializer.validated_data)
 
