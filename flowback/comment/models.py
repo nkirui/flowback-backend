@@ -18,7 +18,6 @@ class Comment(BaseModel, TreeNode):
     attachments = models.ForeignKey(FileCollection, on_delete=models.SET_NULL, null=True, blank=True)
     edited = models.BooleanField(default=False)
     active = models.BooleanField(default=True)
-    # parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
     score = models.IntegerField(default=0)
 
     class Meta:
@@ -27,13 +26,7 @@ class Comment(BaseModel, TreeNode):
         ordering = ['created_at']
 
     def replies(self):
-        if self.children:
-            return self.children
-        else:
-            return 0
+        return self.children
 
     def num_replies(self):
-        if self.replies:
-            return self.replies().count()
-        else:
-            return 0
+        return self.replies().count()
