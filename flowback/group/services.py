@@ -9,7 +9,7 @@ from backend.settings import env, DEFAULT_FROM_EMAIL
 from rest_framework.exceptions import ValidationError
 
 from flowback.comment.models import Comment
-from flowback.comment.services import comment_create, comment_update, comment_delete, comment_reply
+from flowback.comment.services import comment_create, comment_update, comment_delete
 from flowback.kanban.models import KanbanEntry
 from flowback.notification.services import NotificationManager
 from flowback.schedule.models import ScheduleEvent
@@ -533,29 +533,6 @@ def group_thread_comment_create(user_id: int,
     return comment
 
 
-def group_thread_comment_reply(user_id: int,
-                               thread_id: int,
-                               comment_id: int,
-                               message: str,
-                               attachments: list = None,
-                               parent_id: int = None):
-
-    thread = get_object(GroupThread, id=thread_id)
-    comment = get_object(Comment, id=comment_id)
-
-    group_user = group_user_permissions(user=user_id, group=thread.created_by.group)
-
-    comment = comment_reply(author_id=group_user.user.id,
-                            comment_section_id=thread.comment_section.id,
-                            message=message,
-                            comment_id=comment_id,
-                            parent_id=parent_id,
-                            attachments=attachments,
-                            attachment_upload_to="group/thread/attachments")
-
-    return comment
-
-
 def group_thread_comment_update(user_id: int, thread_id: int, comment_id: int, data):
     thread = get_object(GroupThread, id=thread_id)
     comment = get_object(Comment, id=comment_id)
@@ -600,25 +577,6 @@ def group_delegate_pool_comment_create(*,
                              parent_id=parent_id,
                              attachments=attachments,
                              attachment_upload_to="group/delegate_pool/comment/attachments")
-
-    return comment
-
-
-def group_delegate_pool_comment_reply(*,
-                                      author_id: int,
-                                      delegate_pool_id: int,
-                                      message: str,
-                                      attachments: list = None,
-                                      parent_id: int = None) -> Comment:
-    delegate_pool = get_object(GroupUserDelegatePool, id=delegate_pool_id)
-    group_user_permissions(group=delegate_pool.group, user=author_id)
-
-    comment = comment_reply(author_id=author_id,
-                            comment_section_id=delegate_pool.comment_section.id,
-                            message=message,
-                            parent_id=parent_id,
-                            attachments=attachments,
-                            attachment_upload_to="group/delegate_pool/comment/attachments")
 
     return comment
 

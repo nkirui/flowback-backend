@@ -59,39 +59,6 @@ def comment_create(*,
     return comment
 
 
-def comment_reply(*,
-                  author_id: int,
-                  comment_section_id: int,
-                  message: str,
-                  parent_id: int,
-                  attachments: list = None,
-                  attachment_upload_to="",
-                  attachment_upload_to_include_timestamp=True) -> Comment:
-
-    if attachments:
-        collection = upload_collection(user_id=author_id,
-                                       file=attachments,
-                                       upload_to=attachment_upload_to,
-                                       upload_to_include_timestamp=attachment_upload_to_include_timestamp)
-
-    else:
-        collection = None
-
-    comment = Comment(author_id=author_id, comment_section_id=comment_section_id,
-                      message=message, parent_id=parent_id, attachments=collection)
-
-    if parent_id:
-        parent = get_object(Comment, id=parent_id)
-
-        if not parent.active:
-            raise ValidationError("Parent has already been removed")
-
-    comment.full_clean()
-    comment.save()
-
-    return comment
-
-
 def comment_update(*, fetched_by: int, comment_section_id: int,  comment_id: int, data) -> Comment:
     comment = get_object(Comment, comment_section_id=comment_section_id, id=comment_id)
 

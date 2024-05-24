@@ -4,9 +4,24 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from flowback.comment.selectors import comment_list
-from flowback.comment.services import comment_create, comment_update, comment_delete, comment_reply
+from flowback.comment.services import comment_create, comment_delete, comment_update
 from flowback.common.pagination import LimitOffsetPagination, get_paginated_response
 from flowback.files.serializers import FileSerializer
+
+
+class CommentOutputSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    author_id = serializers.IntegerField()
+    author_name = serializers.CharField(source='author.username')
+    author_profile_image = serializers.ImageField(source='author.profile_image')
+    parent_id = serializers.IntegerField(allow_null=True)
+    created_at = serializers.DateTimeField()
+    edited = serializers.BooleanField()
+    active = serializers.BooleanField()
+    message = serializers.CharField(allow_null=True)
+    attachments = FileSerializer(source="attachments.filesegment_set", many=True, allow_null=True)
+    score = serializers.IntegerField()
+    num_replies = serializers.IntegerField()
 
 
 class CommentListAPI(APIView):
@@ -32,18 +47,28 @@ class CommentListAPI(APIView):
         score__gt = serializers.IntegerField(required=False)
         score__lt = serializers.IntegerField(required=False)
 
-    class OutputSerializer(serializers.Serializer):
-        id = serializers.IntegerField()
-        author_id = serializers.IntegerField()
-        author_name = serializers.CharField(source='author.username')
-        author_profile_image = serializers.ImageField(source='author.profile_image')
-        parent_id = serializers.IntegerField(allow_null=True)
-        created_at = serializers.DateTimeField()
-        edited = serializers.BooleanField()
-        active = serializers.BooleanField()
-        message = serializers.CharField()
-        attachments = FileSerializer(source="attachments.filesegment_set", many=True, allow_null=True)
-        score = serializers.IntegerField()
+    class OutputSerializer(CommentOutputSerializer):
+        pass
+
+    def get(self, request, *args, **kwargs):
+        serializer = self.FilterSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        comments = self.lazy_action.__func__(fetched_by=request.user,
+                                             filters=serializer.validated_data,
+                                             *args,
+                                             **kwargs)
+
+        return get_paginated_response(pagination_class=self.Pagination,
+                                      serializer_class=self.OutputSerializer,
+                                      queryset=comments,
+                                      request=request,
+                                      view=self)
+
+
+class CommentDetailAPI(CommentListAPI):
+    class OutputSerializer(CommentOutputSerializer):
+        replies = CommentOutputSerializer(many=True)
 
     def get(self, request, *args, **kwargs):
         serializer = self.FilterSerializer(data=request.query_params)
@@ -66,7 +91,7 @@ class CommentCreateAPI(APIView):
 
     class InputSerializer(serializers.Serializer):
         parent_id = serializers.IntegerField(required=False)
-        message = serializers.CharField()
+        message = serializers.CharField(required=False)
         attachments = serializers.ListField(child=serializers.FileField(), required=False, max_length=10)
 
     def post(self, request, *args, **kwargs):
@@ -74,25 +99,6 @@ class CommentCreateAPI(APIView):
         serializer.is_valid(raise_exception=True)
         comment = self.lazy_action.__func__(*args,
                                             author_id=request.user.id,
-                                            **kwargs,
-                                            **serializer.validated_data)
-
-        return Response(status=status.HTTP_200_OK, data=comment.id)
-
-
-class CommentReplyAPI(APIView):
-    lazy_action = comment_reply
-
-    class InputSerializer(serializers.Serializer):
-        parent_id = serializers.IntegerField(required=False)
-        message = serializers.CharField()
-        attachments = serializers.ListField(child=serializers.FileField(), required=False, max_length=10)
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.InputSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        comment = self.lazy_action.__func__(*args,
-                                            user_id=request.user.id,
                                             **kwargs,
                                             **serializer.validated_data)
 

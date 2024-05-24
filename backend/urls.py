@@ -1,19 +1,19 @@
+from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import include, path
 from django.views.generic import TemplateView
-from drf_spectacular.views import SpectacularRedocView, SpectacularAPIView
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView
 from rest_framework import permissions
 from rest_framework.schemas import get_schema_view
 
-from backend.settings import DEBUG, MEDIA_URL, MEDIA_ROOT, URL_SUBPATH
-from flowback.poll.views.poll import PollUserScheduleListAPI, PollListApi
-from flowback.user.urls import user_patterns
-from flowback.group.urls import group_patterns
-from flowback.poll.urls import group_poll_patterns, poll_patterns
+from backend.settings import DEBUG, MEDIA_ROOT, MEDIA_URL, URL_SUBPATH
 from flowback.chat.urls import chat_patterns
+from flowback.comment.urls import comment_patterns
+from flowback.group.urls import group_patterns
 from flowback.notification.urls import notification_patterns
-from django.conf.urls.static import static
-
+from flowback.poll.urls import group_poll_patterns, poll_patterns
+from flowback.poll.views.poll import PollListApi, PollUserScheduleListAPI
+from flowback.user.urls import user_patterns
 
 api_urlpatterns = [
     path('', include((user_patterns, 'user'))),
@@ -27,6 +27,7 @@ api_urlpatterns = [
     path('poll/user/schedule', PollUserScheduleListAPI.as_view(), name='poll_user_schedule'),
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('schema/redoc/', SpectacularRedocView.as_view(url_name='api:schema'), name='redoc'),
+    path('comments/', include((comment_patterns, 'comment'))),
 ]
 
 try:

@@ -26,8 +26,11 @@ class BaseCommentFilter(django_filters.FilterSet):
 
 
 # TODO group parents together
-def comment_list(*, fetched_by: User, comment_section_id: int, filters=None):
+def comment_list(*, fetched_by: User, comment_section_id: int, comment_id=None, filters=None):
     filters = filters or {}
 
     qs = Comment.objects.filter(comment_section_id=comment_section_id).all()
+    if comment_id:
+        qs = qs.filter(id=comment_id)
+
     return BaseCommentFilter(filters, qs).qs
