@@ -77,6 +77,8 @@ class PollListApi(APIView):
         hide_poll_users = serializers.BooleanField(source='created_by.group.hide_poll_users')
         message_channel_topic_id = serializers.IntegerField(source='message_channel_topic.id')
         total_comments = serializers.IntegerField()
+        total_proposals = serializers.IntegerField()
+        total_predictions = serializers.IntegerField()
         priority = serializers.IntegerField()
         user_priority = serializers.IntegerField()
 
@@ -119,6 +121,8 @@ class PollListApi(APIView):
                       'pinned',
                       'dynamic',
                       'total_comments',
+                      'total_proposals',
+                      'total_predictions',
                       'priority',
                       'user_priority',
                       'quorum',
