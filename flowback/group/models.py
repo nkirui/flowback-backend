@@ -140,6 +140,7 @@ class GroupTags(BaseModel):
 
     class Meta:
         unique_together = ('name', 'group')
+        verbose_name_plural = "group tags"
 
 
 # User information for the specific group
