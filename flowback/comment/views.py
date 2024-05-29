@@ -32,9 +32,6 @@ class CommentListAPI(APIView):
         score__gt = serializers.IntegerField(required=False)
         score__lt = serializers.IntegerField(required=False)
 
-    class OutputSerializer(CommentOutputSerializer):
-        pass  # no changes
-
     def get(self, request, *args, **kwargs):
         serializer = self.FilterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
@@ -45,7 +42,7 @@ class CommentListAPI(APIView):
                                              **kwargs)
 
         return get_paginated_response(pagination_class=self.Pagination,
-                                      serializer_class=self.OutputSerializer,
+                                      serializer_class=CommentOutputSerializer,
                                       queryset=comments,
                                       request=request,
                                       view=self)
