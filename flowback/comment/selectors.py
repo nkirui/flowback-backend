@@ -31,3 +31,7 @@ def comment_list(*, fetched_by: User, comment_section_id: int, filters=None):
 
     qs = Comment.objects.filter(comment_section_id=comment_section_id).all()
     return BaseCommentFilter(filters, qs).qs
+
+
+def comment_detail(*, fetched_by: User, comment_section_id: int, comment_id: int):
+    return Comment.objects.get(comment_section_id=comment_section_id, id=comment_id)

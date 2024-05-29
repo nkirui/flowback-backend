@@ -5,16 +5,17 @@ from rest_framework.response import Response
 from flowback.common.pagination import LimitOffsetPagination, get_paginated_response
 from flowback.comment.views import (CommentListAPI,
                                     CommentCreateAPI,
+                                    CommentDetailAPI,
                                     CommentUpdateAPI,
                                     CommentDeleteAPI
                                     )
-from flowback.group.selectors import group_thread_list, group_thread_comment_list
+from flowback.group.selectors import group_thread_list, group_thread_comment_list, group_thread_comment_detail
 from flowback.group.services import (group_thread_create,
                                      group_thread_update,
                                      group_thread_delete,
                                      group_thread_comment_create,
                                      group_thread_comment_update,
-                                     group_thread_comment_delete                                     
+                                     group_thread_comment_delete
                                      )
 from flowback.user.serializers import BasicUserSerializer
 
@@ -83,6 +84,9 @@ class GroupThreadDeleteAPI(APIView):
 class GroupThreadCommentListAPI(CommentListAPI):
     lazy_action = group_thread_comment_list
 
+class GroupThreadCommentDetailAPI(CommentDetailAPI):
+    lazy_action = group_thread_comment_detail
+
 
 class GroupThreadCommentCreateAPI(CommentCreateAPI):
     lazy_action = group_thread_comment_create
@@ -94,4 +98,3 @@ class GroupThreadCommentUpdateAPI(CommentUpdateAPI):
 
 class GroupThreadCommentDeleteAPI(CommentDeleteAPI):
     lazy_action = group_thread_comment_delete
-

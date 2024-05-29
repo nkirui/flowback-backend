@@ -5,7 +5,7 @@ from typing import Union
 from django.db.models import Q, Exists, OuterRef, Count, Case, When, F
 from django.forms import model_to_dict
 
-from flowback.comment.selectors import comment_list
+from flowback.comment.selectors import comment_list, comment_detail
 from flowback.common.services import get_object
 from flowback.kanban.selectors import kanban_entry_list
 from flowback.user.models import User
@@ -265,11 +265,17 @@ def group_thread_list(*, group_id: int, fetched_by: User, filters=None):
     return BaseGroupThreadFilter(filters, qs).qs
 
 
-def group_thread_comment_list(*, fetched_by: User, thread_id: int, filters=None):
+def group_thread_comment_list(*, fetched_by: User, thread_id: int, filters=None, **kwargs):
     thread = get_object(GroupThread, id=thread_id)
     group_user_permissions(user=fetched_by, group=thread.created_by.group)
 
-    return comment_list(fetched_by=fetched_by, comment_section_id=thread.comment_section_id, filters=filters)
+    return comment_list(fetched_by=fetched_by, comment_section_id=thread.comment_section_id, filters=filters, **kwargs)
+
+
+def group_thread_comment_detail(*, fetched_by: User, thread_id: int, comment_id: int, filters=None):
+    thread = get_object(GroupThread, id=thread_id)
+    group_user_permissions(user=fetched_by, group=thread.created_by.group)
+    return comment_detail(fetched_by=fetched_by, comment_section_id=thread.comment_section_id, comment_id=comment_id)
 
 
 def group_delegate_pool_comment_list(*, fetched_by: User, delegate_pool_id: int, filters=None):

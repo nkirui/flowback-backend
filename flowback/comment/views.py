@@ -40,16 +40,11 @@ class CommentDetailAPI(CommentListAPI):
         serializer = CommentFilterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        comments = self.lazy_action.__func__(fetched_by=request.user,
+        comment = self.lazy_action.__func__(fetched_by=request.user,
                                              filters=serializer.validated_data,
                                              *args,
                                              **kwargs)
-
-        return get_paginated_response(pagination_class=self.Pagination,
-                                      serializer_class=CommentDetailOutputSerializer,
-                                      queryset=comments,
-                                      request=request,
-                                      view=self)
+        return Response(data=CommentDetailOutputSerializer(comment).data)
 
 
 class CommentCreateAPI(APIView):
