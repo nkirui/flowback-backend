@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Group, GroupPermissions, GroupTags, GroupUser, GroupUserInvite, GroupUserDelegatePool, GroupUserDelegate, GroupUserDelegator, GroupFolder
+from .models import Group, GroupPermissions, GroupTags, GroupUser, GroupUserInvite, GroupUserDelegatePool, GroupUserDelegate, GroupUserDelegator, GroupFolder, GroupThread
 
 @admin.register(GroupFolder)
 class GroupFolderAdmin(admin.ModelAdmin):
@@ -12,7 +12,7 @@ class GroupAdmin(admin.ModelAdmin):
                     'public', 'default_permission', 'name',
                     'description', 'image', 'cover_image',
                     'hide_poll_users', 'schedule', 'kanban', 'jitsi_room', 'group_folder')
-    
+
 
 @admin.register(GroupPermissions)
 class GroupPermissionsAdmin(admin.ModelAdmin):
@@ -46,3 +46,8 @@ class GroupUserDelegateAdmin(admin.ModelAdmin):
 @admin.register(GroupUserDelegator)
 class GroupUserDelegatorAdmin(admin.ModelAdmin):
     list_display = ('delegator', 'delegate_pool', 'group')
+
+
+@admin.register(GroupThread)
+class GroupThreadAdmin(admin.ModelAdmin):
+    list_display = ('title', 'pinned', 'comment_section', 'active')
