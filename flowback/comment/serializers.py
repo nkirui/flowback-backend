@@ -40,7 +40,7 @@ class CommentFilterSerializer(serializers.Serializer):
 
 
 class CommentCreateInputSerializer(serializers.Serializer):
-    parent_id = serializers.IntegerField(required=False)
+    parent_id = serializers.IntegerField(required=False, allow_null=True)
     message = serializers.CharField()
     attachments = serializers.ListField(child=serializers.FileField(), required=False, max_length=10)
 
