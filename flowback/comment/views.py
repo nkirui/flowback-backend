@@ -34,8 +34,7 @@ class CommentListAPI(APIView):
                                       view=self)
 
 
-class CommentDetailAPI(CommentListAPI):
-
+class CommentDetailAPI(APIView):
     def get(self, request, *args, **kwargs):
         serializer = CommentFilterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
