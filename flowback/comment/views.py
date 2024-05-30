@@ -62,7 +62,8 @@ class CommentDetailAPI(APIView):
             if include_descendants:
                 replies = comment.descendants(include_self=True)
             elif include_ancestors:
-                replies = comment.get_ancestors(include_self=True)
+                replies = comment.ancestors(include_self=True).extra(order_by=["-created_at"])
+                # change the ordering so that the results does not cut out the comment we are fetching ancestors for
             return get_paginated_response(pagination_class=self.Pagination,
                                       serializer_class=CommentListOutputSerializer,
                                       queryset=replies,
