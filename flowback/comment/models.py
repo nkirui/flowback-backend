@@ -21,3 +21,13 @@ class Comment(BaseModel, TreeNode):
     edited = models.BooleanField(default=False)
     active = models.BooleanField(default=True)
     score = models.IntegerField(default=0)
+
+    class Meta:
+        constraints = [models.CheckConstraint(check=Q(attachments__isnull=False) | Q(message__isnull=False),
+                                              name='comment_data_check')]
+
+    def replies(self):
+        return self.children
+
+    def num_replies(self):
+        return self.replies().count()
