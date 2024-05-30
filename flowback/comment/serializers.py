@@ -21,13 +21,6 @@ class CommentListOutputSerializer(serializers.Serializer):
 class CommentDetailOutputSerializer(CommentListOutputSerializer):
     replies = CommentListOutputSerializer(many=True)
 
-class CommentDetailWithDescendantsOutputSerializer(CommentListOutputSerializer):
-    descendants = CommentListOutputSerializer(many=True)
-
-class CommentDetailWithAncestorsOutputSerializer(CommentListOutputSerializer):
-    ancestors = CommentListOutputSerializer(many=True)
-
-
 class CommentFilterSerializer(serializers.Serializer):
     order_by = serializers.ChoiceField(choices=['created_at_asc',
                                                 'created_at_desc',

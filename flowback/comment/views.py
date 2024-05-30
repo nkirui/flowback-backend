@@ -10,9 +10,7 @@ from flowback.comment.serializers import (CommentListOutputSerializer,
                                           CommentDetailOutputSerializer,
                                           CommentFilterSerializer,
                                           CommentCreateInputSerializer,
-                                          CommentUpdateInputSerializer,
-                                          CommentDetailWithDescendantsOutputSerializer,
-                                          CommentDetailWithAncestorsOutputSerializer)
+                                          CommentUpdateInputSerializer)
 
 
 class CommentListAPI(APIView):
@@ -41,26 +39,35 @@ class CommentListAPI(APIView):
 
 
 class CommentDetailAPI(APIView):
+    class Pagination(LimitOffsetPagination):
+        default_limit = 20
+        max_limit = 100
+
     def get(self, request, *args, **kwargs):
         comment = self.lazy_action.__func__(fetched_by=request.user,
                                              filters=kwargs,
                                              *args,
                                              **kwargs)
 
-        output_serializer = CommentDetailOutputSerializer
         include_descendants = request.query_params.get('include_descendants', False)
         include_ancestors = request.query_params.get('include_ancestors', False)
-        if include_descendants and include_ancestors:
+        if not any([include_ancestors, include_descendants]):
+            return Response(data=CommentDetailOutputSerializer(comment).data)
+
+        elif all([include_descendants, include_ancestors]):
             return Response(
                 data={"message": "Can only request one of `include_descendants` or `include_descendants` and not both."},
                 status=status.HTTP_400_BAD_REQUEST)
-        elif include_descendants:
-            output_serializer = CommentDetailWithDescendantsOutputSerializer
-        elif include_ancestors:
-            output_serializer = CommentDetailWithAncestorsOutputSerializer
-
-        return Response(data=output_serializer(comment).data)
-
+        else:
+            if include_descendants:
+                replies = comment.descendants(include_self=True)
+            elif include_ancestors:
+                replies = comment.get_ancestors(include_self=True)
+            return get_paginated_response(pagination_class=self.Pagination,
+                                      serializer_class=CommentListOutputSerializer,
+                                      queryset=replies,
+                                      request=request,
+                                      view=self)
 
 class CommentCreateAPI(APIView):
     lazy_action = comment_create

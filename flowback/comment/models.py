@@ -30,9 +30,3 @@ class Comment(BaseModel, TreeNode):
 
     def num_replies(self):
         return self.replies().count()
-
-    def descendants(self):
-        return super().descendants(include_self=False)
-
-    def ancestors(self):
-        return super().ancestors(include_self=False)
