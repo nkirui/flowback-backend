@@ -12,10 +12,9 @@ class CommentListOutputSerializer(serializers.Serializer):
     created_at = serializers.DateTimeField()
     edited = serializers.BooleanField()
     active = serializers.BooleanField()
-    message = serializers.CharField(allow_null=True)
+    message = serializers.CharField()
     attachments = FileSerializer(source="attachments.filesegment_set", many=True, allow_null=True)
     score = serializers.IntegerField()
-    num_replies = serializers.IntegerField()
 
 
 class CommentDetailOutputSerializer(CommentListOutputSerializer):
