@@ -12,15 +12,13 @@ from flowback.comment.serializers import (CommentListOutputSerializer,
                                           CommentCreateInputSerializer,
                                           CommentUpdateInputSerializer)
 
+class CommentPagination(LimitOffsetPagination):
+    default_limit = 50
+    max_limit = 100
+
 
 class CommentListAPI(APIView):
     lazy_action = comment_list
-
-    class Pagination(LimitOffsetPagination):
-        default_limit = 20
-        max_limit = 100
-
-
 
     def get(self, request, *args, **kwargs):
         serializer = CommentFilterSerializer(data=request.query_params)
@@ -31,7 +29,7 @@ class CommentListAPI(APIView):
                                              *args,
                                              **kwargs)
 
-        return get_paginated_response(pagination_class=self.Pagination,
+        return get_paginated_response(pagination_class=CommentPagination,
                                       serializer_class=CommentListOutputSerializer,
                                       queryset=comments,
                                       request=request,
@@ -39,10 +37,6 @@ class CommentListAPI(APIView):
 
 
 class CommentDetailAPI(APIView):
-    class Pagination(LimitOffsetPagination):
-        default_limit = 20
-        max_limit = 100
-
     def get(self, request, *args, **kwargs):
         comment = self.lazy_action.__func__(fetched_by=request.user,
                                              filters=kwargs,
@@ -64,7 +58,7 @@ class CommentDetailAPI(APIView):
             elif include_ancestors:
                 replies = comment.ancestors(include_self=True).extra(order_by=["-created_at"])
                 # change the ordering so that the results does not cut out the comment we are fetching ancestors for
-            return get_paginated_response(pagination_class=self.Pagination,
+            return get_paginated_response(pagination_class=CommentPagination,
                                       serializer_class=CommentListOutputSerializer,
                                       queryset=replies,
                                       request=request,
