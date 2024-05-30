@@ -72,6 +72,11 @@ class CommentDetailAPI(APIView):
 class CommentCreateAPI(APIView):
     lazy_action = comment_create
 
+    class InputSerializer(serializers.Serializer):
+        parent_id = serializers.IntegerField(required=False)
+        message = serializers.CharField(required=False)
+        attachments = serializers.ListField(child=serializers.FileField(), required=False, max_length=10)
+
     def post(self, request, *args, **kwargs):
         serializer = CommentCreateInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

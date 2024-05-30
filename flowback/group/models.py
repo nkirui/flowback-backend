@@ -1,6 +1,7 @@
 import uuid
 
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db.models import Q
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.forms import model_to_dict
 from rest_framework.exceptions import ValidationError
@@ -37,10 +38,10 @@ class Group(BaseModel):
     active = models.BooleanField(default=True)
 
     # Direct join determines if join requests requires moderation or not.
-    direct_join = models.BooleanField(default=True)
+    direct_join = models.BooleanField(default=False)
 
     # Public determines if the group is open to public or not
-    public = models.BooleanField(default=False)
+    public = models.BooleanField(default=True)
 
     # Determines the default permission for every user get when they join
     # TODO return basic permissions by default if field is NULL
@@ -61,6 +62,10 @@ class Group(BaseModel):
     group_folder = models.ForeignKey(GroupFolder, null=True, blank=True, on_delete=models.SET_NULL)
 
     jitsi_room = models.UUIDField(unique=True, default=uuid.uuid4)
+
+    class Meta:
+        constraints = [models.CheckConstraint(check=~Q(Q(public=False) & Q(direct_join=True)),
+                                              name='group_not_public_and_direct_join_check')]
 
     @classmethod
     def pre_save(cls, instance, raw, using, update_fields, *args, **kwargs):
@@ -117,15 +122,26 @@ class GroupPermissions(BaseModel):
     allow_vote = models.BooleanField(default=True)
     kick_members = models.BooleanField(default=False)
     ban_members = models.BooleanField(default=False)
+
     create_proposal = models.BooleanField(default=True)
     update_proposal = models.BooleanField(default=True)
     delete_proposal = models.BooleanField(default=True)
-    force_delete_poll = models.BooleanField(default=False)
-    force_delete_proposal = models.BooleanField(default=False)
-    force_delete_comment = models.BooleanField(default=False)
+
+    prediction_statement_create = models.BooleanField(default=True)
+    prediction_statement_update = models.BooleanField(default=True)
+    prediction_statement_delete = models.BooleanField(default=True)
+
+    prediction_bet_create = models.BooleanField(default=True)
+    prediction_bet_update = models.BooleanField(default=True)
+    prediction_bet_delete = models.BooleanField(default=True)
+
     create_kanban_task = models.BooleanField(default=True)
     update_kanban_task = models.BooleanField(default=True)
     delete_kanban_task = models.BooleanField(default=True)
+
+    force_delete_poll = models.BooleanField(default=False)
+    force_delete_proposal = models.BooleanField(default=False)
+    force_delete_comment = models.BooleanField(default=False)
 
     @staticmethod
     def negate_field_perms():
