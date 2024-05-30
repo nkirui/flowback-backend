@@ -6,7 +6,13 @@ from rest_framework.views import APIView
 from flowback.comment.selectors import comment_list
 from flowback.comment.services import comment_create, comment_delete, comment_update
 from flowback.common.pagination import LimitOffsetPagination, get_paginated_response
-from flowback.comment.serializers import CommentListOutputSerializer, CommentDetailOutputSerializer, CommentFilterSerializer, CommentCreateInputSerializer, CommentUpdateInputSerializer
+from flowback.comment.serializers import (CommentListOutputSerializer,
+                                          CommentDetailOutputSerializer,
+                                          CommentFilterSerializer,
+                                          CommentCreateInputSerializer,
+                                          CommentUpdateInputSerializer,
+                                          CommentDetailWithDescendantsOutputSerializer,
+                                          CommentDetailWithAncestorsOutputSerializer)
 
 
 class CommentListAPI(APIView):
@@ -36,14 +42,25 @@ class CommentListAPI(APIView):
 
 class CommentDetailAPI(APIView):
     def get(self, request, *args, **kwargs):
-        serializer = CommentFilterSerializer(data=request.query_params)
-        serializer.is_valid(raise_exception=True)
-
         comment = self.lazy_action.__func__(fetched_by=request.user,
-                                             filters=serializer.validated_data,
+                                             filters=kwargs,
                                              *args,
                                              **kwargs)
-        return Response(data=CommentDetailOutputSerializer(comment).data)
+
+        output_serializer = CommentDetailOutputSerializer
+        include_descendants = request.query_params.get('include_descendants', False)
+        include_ancestors = request.query_params.get('include_ancestors', False)
+        print(include_descendants, include_ancestors)
+        if include_descendants and include_ancestors:
+            return Response(
+                data={"message": "Can only request one of `include_descendants` or `include_descendants` and not both."},
+                status=status.HTTP_400_BAD_REQUEST)
+        elif include_descendants:
+            output_serializer = CommentDetailWithDescendantsOutputSerializer
+        elif include_ancestors:
+            output_serializer = CommentDetailWithAncestorsOutputSerializer
+
+        return Response(data=output_serializer(comment).data)
 
 
 class CommentCreateAPI(APIView):

@@ -21,6 +21,12 @@ class CommentListOutputSerializer(serializers.Serializer):
 class CommentDetailOutputSerializer(CommentListOutputSerializer):
     replies = CommentListOutputSerializer(many=True)
 
+class CommentDetailWithDescendantsOutputSerializer(CommentListOutputSerializer):
+    descendants = CommentListOutputSerializer(many=True)
+
+class CommentDetailWithAncestorsOutputSerializer(CommentListOutputSerializer):
+    ancestors = CommentListOutputSerializer(many=True)
+
 
 class CommentFilterSerializer(serializers.Serializer):
     order_by = serializers.ChoiceField(choices=['created_at_asc',
@@ -40,6 +46,7 @@ class CommentFilterSerializer(serializers.Serializer):
 
 
 class CommentCreateInputSerializer(serializers.Serializer):
+    comment_section_id = serializers.IntegerField()
     parent_id = serializers.IntegerField(required=False, allow_null=True)
     message = serializers.CharField()
     attachments = serializers.ListField(child=serializers.FileField(), required=False, max_length=10)
