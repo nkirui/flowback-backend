@@ -50,7 +50,6 @@ class CommentDetailAPI(APIView):
         output_serializer = CommentDetailOutputSerializer
         include_descendants = request.query_params.get('include_descendants', False)
         include_ancestors = request.query_params.get('include_ancestors', False)
-        print(include_descendants, include_ancestors)
         if include_descendants and include_ancestors:
             return Response(
                 data={"message": "Can only request one of `include_descendants` or `include_descendants` and not both."},
