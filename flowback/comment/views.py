@@ -18,9 +18,23 @@ class CommentPagination(LimitOffsetPagination):
 
 
 class CommentListAPI(APIView):
+    """
+    Returns a list of comments based on the filters provided.
+    """
     lazy_action = comment_list
 
     def get(self, request, *args, **kwargs):
+        """
+        Get list of comments given a comment section
+
+        Kwargs from URL:
+        - comment_section: id of the comment section
+
+        Request query params:
+        - limit: number of comments to fetch
+        - offset: offset of the comments to fetch
+        """
+        print(args, kwargs)
         serializer = CommentFilterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
@@ -37,7 +51,23 @@ class CommentListAPI(APIView):
 
 
 class CommentDetailAPI(APIView):
+    """
+    Returns details of a single comment based on the filters provided.
+    """
     def get(self, request, *args, **kwargs):
+        """
+        Get details of a single comment based on the filters provided.
+
+        Kwargs from URL:
+        - comment_id: id of the comment
+        - comment_section: id of the comment section
+
+        Request query params:
+        - include_descendants: include all descendants of the comment
+        - include_ancestors: include all ancestors of the comment
+        - limit: number of descendants/ancestors to fetch including the original comment
+        - offset: offset of the descendants/ancestors to fetch including the original comment
+        """
         comment = self.lazy_action.__func__(fetched_by=request.user,
                                              filters=kwargs,
                                              *args,
@@ -65,9 +95,22 @@ class CommentDetailAPI(APIView):
                                       view=self)
 
 class CommentCreateAPI(APIView):
+    """Creates a new comment."""
     lazy_action = comment_create
 
     def post(self, request, *args, **kwargs):
+        """
+        Create a new comment based on the data provided.
+
+        Kwargs from URL:
+        - comment_section: id of the comment section
+
+        Request data:
+        - parent_id: id of the parent comment (if any)
+        - message: message of the comment
+        - attachments: list of attachments
+
+        """
         serializer = CommentCreateInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         comment = self.lazy_action.__func__(*args,
@@ -79,9 +122,20 @@ class CommentCreateAPI(APIView):
 
 
 class CommentUpdateAPI(APIView):
+    """Updates an existing comment."""
     lazy_action = comment_update
 
     def post(self, request, *args, **kwargs):
+        """
+        Update an existing comment based on the data provided.
+
+        Kwargs from URL:
+        - comment_id: id of the comment
+        - comment_section: id of the comment section
+
+        Request data:
+        - message: message of the comment
+        """
         serializer = CommentUpdateInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -94,9 +148,17 @@ class CommentUpdateAPI(APIView):
 
 
 class CommentDeleteAPI(APIView):
+    """Deletes an existing comment."""
     lazy_action = comment_delete
 
     def post(self, request, *args, **kwargs):
+        """
+        Delete an existing comment.
+
+        Kwargs from URL:
+        - comment_id: id of the comment
+        - comment_section: id of the comment section
+        """
         self.lazy_action.__func__(*args,
                                   **kwargs,
                                   fetched_by=request.user)
