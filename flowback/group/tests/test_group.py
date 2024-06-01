@@ -7,10 +7,11 @@ from rest_framework.test import APIRequestFactory, force_authenticate, APITransa
 from flowback.group.models import GroupUser, Group, GroupUserInvite, GroupThread
 from flowback.group.tests.factories import GroupFactory, GroupUserFactory
 from flowback.group.views.group import GroupListApi, GroupCreateApi
-from flowback.group.views.thread import GroupThreadCommentCreateAPI
+from flowback.group.views.thread import GroupThreadCommentCreateAPI, GroupThreadCommentListAPI, GroupThreadCommentUpdateAPI, GroupThreadCommentDeleteAPI
 from flowback.group.views.user import GroupInviteApi, GroupJoinApi, GroupInviteAcceptApi, GroupInviteListApi
 from flowback.user.models import User
 from flowback.user.tests.factories import UserFactory
+from flowback.comment.models import Comment
 
 
 class GroupTest(APITransactionTestCase):
@@ -180,3 +181,25 @@ class GroupCommentTest(APITransactionTestCase):
         response = view(request, thread_id=self.group_thread.id)
         self.assertEqual(response.status_code, 201)
         self.assertTrue(GroupThread.objects.count() == 1)
+        # TODO: check the number of comment objects
+
+    def test_can_list_comments_in_a_group_thread(self):
+        create_view = GroupThreadCommentCreateAPI.as_view()
+        factory = APIRequestFactory()
+        for i in range(10):
+            data = dict(message=f"test {i}", parent_id=None, attachments=[])
+            request = factory.post("", data=data, format="json")
+            force_authenticate(request, user=self.user)
+            create_view(request, thread_id=self.group_thread.id)
+
+        self.assertEqual(Comment.objects.count(), 10)
+
+        fetch_view = GroupThreadCommentListAPI.as_view()
+        request = factory.get("", format="json")
+        force_authenticate(request, user=self.user)
+        response = fetch_view(request, thread_id=self.group_thread.id)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(response.data), ["limit", "offset", "count", "next", "previous", "results"])  # check keys
+        expected_messages = [f"test {i}" for i in range(10)]
+        self.assertEqual(len(response.data["results"]), 10)
+        self.assertEqual(sorted([cmt["message"] for cmt in response.data["results"]]), sorted(expected_messages))
