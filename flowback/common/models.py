@@ -10,7 +10,6 @@ class BaseModel(models.Model):
 
     class Meta:
         abstract = True
-        ordering = ["created_at"]
 
 
 # Generates a query where only one of the fields is allowed to be set, while all other fields must be null
