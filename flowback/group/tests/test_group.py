@@ -7,7 +7,11 @@ from rest_framework.test import APIRequestFactory, force_authenticate, APITransa
 from flowback.group.models import GroupUser, Group, GroupUserInvite, GroupThread
 from flowback.group.tests.factories import GroupFactory, GroupUserFactory
 from flowback.group.views.group import GroupListApi, GroupCreateApi
-from flowback.group.views.thread import GroupThreadCommentCreateAPI, GroupThreadCommentListAPI, GroupThreadCommentUpdateAPI, GroupThreadCommentDeleteAPI
+from flowback.group.views.thread import (GroupThreadCommentCreateAPI,
+                                         GroupThreadCommentDetailAPI,
+                                         GroupThreadCommentListAPI,
+                                         GroupThreadCommentUpdateAPI,
+                                         GroupThreadCommentDeleteAPI)
 from flowback.group.views.user import GroupInviteApi, GroupJoinApi, GroupInviteAcceptApi, GroupInviteListApi
 from flowback.user.models import User
 from flowback.user.tests.factories import UserFactory
@@ -182,6 +186,25 @@ class GroupCommentTest(APITransactionTestCase):
         self.assertEqual(response.status_code, 201)
         self.assertTrue(GroupThread.objects.count() == 1)
         self.assertTrue(Comment.objects.count()==1)
+
+
+    def test_can_fetch_details_for_a_comment(self):
+        factory = APIRequestFactory()
+        create_view = GroupThreadCommentCreateAPI.as_view()
+        data = dict(message="test", parent_id=None, attachments=[])
+        request = factory.post("", data=data, format="json")
+        force_authenticate(request, user=self.user)
+        response = create_view(request, thread_id=self.group_thread.id)
+
+        fetch_view = GroupThreadCommentDetailAPI.as_view()
+        request = factory.get("")
+        force_authenticate(request, user=self.user)
+        response = fetch_view(request, thread_id=self.group_thread.id, comment_id=response.data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["message"], "test")
+
+
 
     def test_can_list_comments_in_a_group_thread(self):
         create_view = GroupThreadCommentCreateAPI.as_view()
