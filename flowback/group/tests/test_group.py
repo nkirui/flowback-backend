@@ -175,12 +175,12 @@ class GroupCommentTest(APITransactionTestCase):
         self.group_user = GroupUserFactory.create(group=self.group)
         self.user = self.group_user.user
         self.group_thread = GroupThread.objects.create(created_by=self.group_user)
+        self.factory = APIRequestFactory()
 
     def test_can_add_comment_to_group_thread(self):
         view = GroupThreadCommentCreateAPI.as_view()
         data = dict(message="test", parent_id=None, attachments=[])
-        factory = APIRequestFactory()
-        request = factory.post("", data=data, format="json")
+        request = self.factory.post("", data=data, format="json")
         force_authenticate(request, user=self.user)
         response = view(request, thread_id=self.group_thread.id)
         self.assertEqual(response.status_code, 201)
@@ -189,15 +189,14 @@ class GroupCommentTest(APITransactionTestCase):
 
 
     def test_can_fetch_details_for_a_comment(self):
-        factory = APIRequestFactory()
         create_view = GroupThreadCommentCreateAPI.as_view()
         data = dict(message="test", parent_id=None, attachments=[])
-        request = factory.post("", data=data, format="json")
+        request = self.factory.post("", data=data, format="json")
         force_authenticate(request, user=self.user)
         response = create_view(request, thread_id=self.group_thread.id)
 
         fetch_view = GroupThreadCommentDetailAPI.as_view()
-        request = factory.get("")
+        request = self.factory.get("")
         force_authenticate(request, user=self.user)
         response = fetch_view(request, thread_id=self.group_thread.id, comment_id=response.data)
 
@@ -208,17 +207,16 @@ class GroupCommentTest(APITransactionTestCase):
 
     def test_can_list_comments_in_a_group_thread(self):
         create_view = GroupThreadCommentCreateAPI.as_view()
-        factory = APIRequestFactory()
         for i in range(10):
             data = dict(message=f"test {i}", parent_id=None, attachments=[])
-            request = factory.post("", data=data, format="json")
+            request = self.factory.post("", data=data, format="json")
             force_authenticate(request, user=self.user)
             create_view(request, thread_id=self.group_thread.id)
 
         self.assertEqual(Comment.objects.count(), 10)
 
         fetch_view = GroupThreadCommentListAPI.as_view()
-        request = factory.get("", format="json")
+        request = self.factory.get("", format="json")
         force_authenticate(request, user=self.user)
         response = fetch_view(request, thread_id=self.group_thread.id)
         self.assertEqual(response.status_code, 200)
@@ -226,3 +224,6 @@ class GroupCommentTest(APITransactionTestCase):
         expected_messages = [f"test {i}" for i in range(10)]
         self.assertEqual(len(response.data["results"]), 10)
         self.assertEqual(sorted([cmt["message"] for cmt in response.data["results"]]), sorted(expected_messages))
+
+    def test_can_fetch_descendants_of_a_thread_comment(self):
+        pass
