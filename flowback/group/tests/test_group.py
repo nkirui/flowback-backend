@@ -181,7 +181,7 @@ class GroupCommentTest(APITransactionTestCase):
         response = view(request, thread_id=self.group_thread.id)
         self.assertEqual(response.status_code, 201)
         self.assertTrue(GroupThread.objects.count() == 1)
-        # TODO: check the number of comment objects
+        self.assertTrue(Comment.objects.count()==1)
 
     def test_can_list_comments_in_a_group_thread(self):
         create_view = GroupThreadCommentCreateAPI.as_view()
