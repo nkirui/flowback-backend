@@ -4,9 +4,10 @@ from pprint import pprint
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIRequestFactory, force_authenticate, APITransactionTestCase
 
-from flowback.group.models import GroupUser, Group, GroupUserInvite
+from flowback.group.models import GroupUser, Group, GroupUserInvite, GroupThread
 from flowback.group.tests.factories import GroupFactory, GroupUserFactory
 from flowback.group.views.group import GroupListApi, GroupCreateApi
+from flowback.group.views.thread import GroupThreadCommentCreateAPI
 from flowback.group.views.user import GroupInviteApi, GroupJoinApi, GroupInviteAcceptApi, GroupInviteListApi
 from flowback.user.models import User
 from flowback.user.tests.factories import UserFactory
@@ -161,3 +162,21 @@ class GroupTest(APITransactionTestCase):
             response = view(request, group=group_user.group)
 
             self.assertTrue(bool(response.data.get('results')) == allowed)
+
+
+class GroupCommentTest(APITransactionTestCase):
+    def setUp(self):
+        self.group = GroupFactory.create(public=True)
+        self.group_user = GroupUserFactory.create(group=self.group)
+        self.user = self.group_user.user
+        self.group_thread = GroupThread.objects.create(created_by=self.group_user)
+
+    def test_can_add_comment_to_group_thread(self):
+        view = GroupThreadCommentCreateAPI.as_view()
+        data = dict(message="test", parent_id=None, attachments=[])
+        factory = APIRequestFactory()
+        request = factory.post("", data=data, format="json")
+        force_authenticate(request, user=self.user)
+        response = view(request, thread_id=self.group_thread.id)
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(GroupThread.objects.count() == 1)
