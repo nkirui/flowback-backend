@@ -34,7 +34,6 @@ class CommentListAPI(APIView):
         - limit: number of comments to fetch
         - offset: offset of the comments to fetch
         """
-        print(args, kwargs)
         serializer = CommentFilterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
