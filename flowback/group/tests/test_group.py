@@ -226,4 +226,65 @@ class GroupCommentTest(APITransactionTestCase):
         self.assertEqual(sorted([cmt["message"] for cmt in response.data["results"]]), sorted(expected_messages))
 
     def test_can_fetch_descendants_of_a_thread_comment(self):
-        pass
+        create_view = GroupThreadCommentCreateAPI.as_view()
+        parent_id = None
+        parent_comment_id = None
+        comment_ids = []
+        for i in range(10):
+            data = dict(message=f"test {i}", parent_id=parent_id, attachments=[])
+            request = self.factory.post("", data=data, format="json")
+            force_authenticate(request, user=self.user)
+            resp = create_view(request, thread_id=self.group_thread.id)
+            comment_ids.append(resp.data)
+            parent_id = resp.data
+            if i == 0:
+                parent_comment_id = parent_id
+
+        extra_message = dict(message="test xx", parent_id=None, attachments=[]) # not part of the lineage
+        request = self.factory.post("", data=extra_message, format="json")
+        force_authenticate(request, user=self.user)
+        extra_resp = create_view(request, thread_id=self.group_thread.id)
+
+        fetch_view = GroupThreadCommentDetailAPI.as_view()
+        request = self.factory.get("", data={"include_descendants": True})
+        force_authenticate(request, user=self.user)
+        response = fetch_view(request, thread_id=self.group_thread.id, comment_id=parent_comment_id)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(response.data), ["limit", "offset", "count", "next", "previous", "results"])
+        self.assertEqual(len(response.data["results"]), 10)
+        self.assertEqual([msg["id"] for msg in response.data["results"]], comment_ids)
+        self.assertTrue(extra_resp.data not in [msg["id"] for msg in response.data["results"]])
+
+    def test_can_fetch_ancestors_of_a_thread_comment(self):
+        create_view = GroupThreadCommentCreateAPI.as_view()
+        parent_id = None
+        parent_comment_id = None
+        comment_ids = []
+        for i in range(10):
+            data = dict(message=f"test {i}", parent_id=parent_id, attachments=[])
+            request = self.factory.post("", data=data, format="json")
+            force_authenticate(request, user=self.user)
+            resp = create_view(request, thread_id=self.group_thread.id)
+            comment_ids.append(resp.data)
+            parent_id = resp.data
+            if i == 0:
+                parent_comment_id = parent_id
+
+        extra_message = dict(message="test xx", parent_id=None, attachments=[])  # not part of the lineage
+        request = self.factory.post("", data=extra_message, format="json")
+        force_authenticate(request, user=self.user)
+        create_view(request, thread_id=self.group_thread.id)
+
+        fetch_view = GroupThreadCommentDetailAPI.as_view()
+        request = self.factory.get("", data={"include_ancestors": True})
+        force_authenticate(request, user=self.user)
+
+        # parent has no ancestors
+        response = fetch_view(request, thread_id=self.group_thread.id, comment_id=comment_ids[0])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([msg["id"] for msg in response.data["results"]], [comment_ids[0]])
+
+        # last descendant includes all the objects as ancestors
+        response = fetch_view(request, thread_id=self.group_thread.id, comment_id=comment_ids[-1])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([msg["id"] for msg in response.data["results"]], list(reversed(comment_ids)))
