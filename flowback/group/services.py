@@ -516,7 +516,7 @@ def group_thread_delete(user_id: int, thread_id: int):
     thread.delete()
 
 
-def group_thread_comment_create(*,author_id, thread_id, parent_id, message,attachments,**kwargs):
+def group_thread_comment_create(*,author_id, thread_id, parent_id, message,attachments):
     thread = get_object(GroupThread, id=thread_id)
     group_user = group_user_permissions(user=author_id, group=thread.created_by.group)
 
