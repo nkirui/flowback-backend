@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Optional
 
 from django.core.mail import send_mass_mail
 from django.db.models import Q
@@ -516,7 +516,7 @@ def group_thread_delete(user_id: int, thread_id: int):
     thread.delete()
 
 
-def group_thread_comment_create(*,author_id, thread_id, parent_id, message,attachments):
+def group_thread_comment_create(*,author_id: int, thread_id: int, parent_id: Optional[int], message: str, attachments: list):
     thread = get_object(GroupThread, id=thread_id)
     group_user = group_user_permissions(user=author_id, group=thread.created_by.group)
 
