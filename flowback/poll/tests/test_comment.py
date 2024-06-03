@@ -9,7 +9,7 @@ from .factories import PollFactory
 from ...comment.tests.factories import CommentFactory
 from ...files.models import FileSegment
 from ...files.tests.factories import FileCollectionFactory, FileSegmentFactory
-from ...poll.views.comment import PollCommentCreateAPI, PollCommentListAPI
+from ...poll.views.comment import PollCommentCreateAPI, PollCommentListAPI, PollCommentDetailAPI
 
 
 class PollCommentTest(APITransactionTestCase):
@@ -89,3 +89,46 @@ class PollCommentTest(APITransactionTestCase):
         pprint([i['attachments'] for i in response.data['results'] if i['id'] == target])
         self.assertEqual(len([i['attachments'] for i in response.data['results'] if i['id'] == target][0]), 2)
 
+
+    def test_fetch_poll_comment_details(self):
+        factory = APIRequestFactory()
+        view = PollCommentDetailAPI.as_view()
+        request = factory.get('')
+        force_authenticate(request, user=self.poll.created_by.user)
+        response = view(request, poll_id=self.poll.id, comment_id=self.poll_comment_one.id)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(response.data.keys()), ['id','author_id', 'author_name', 'author_profile_image',
+            'parent_id', 'created_at', 'edited', 'active', 'message','attachments', 'score', 'num_replies', 'replies'])
+
+    def test_fetch_poll_comment_details_with_descendants(self):
+        factory = APIRequestFactory()
+        data = {"message": "test", "parent_id": self.poll_comment_one.id}
+        create_view = PollCommentCreateAPI.as_view()
+        request = factory.post("", data=data)
+        force_authenticate(request, user=self.poll.created_by.user)
+        create_response = create_view(request, poll_id=self.poll.id)
+
+        view = PollCommentDetailAPI.as_view()
+        request = factory.get('', data={"include_descendants": True})
+        force_authenticate(request, user=self.poll.created_by.user)
+        response = view(request, poll_id=self.poll.id, comment_id=self.poll_comment_one.id)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(response.data.keys()), ['limit', 'offset','count','next','previous','results'])
+        self.assertEqual([cmt['id'] for cmt in response.data['results']], [self.poll_comment_one.id, create_response.data])
+
+    def test_fetch_poll_comment_details_with_ancestors(self):
+        factory = APIRequestFactory()
+        data = {"message": "test", "parent_id": self.poll_comment_one.id}
+        create_view = PollCommentCreateAPI.as_view()
+        request = factory.post("", data=data)
+        force_authenticate(request, user=self.poll.created_by.user)
+        create_response = create_view(request, poll_id=self.poll.id)
+
+        view = PollCommentDetailAPI.as_view()
+        request = factory.get('', data={"include_ancestors": True})
+        force_authenticate(request, user=self.poll.created_by.user)
+        response = view(request, poll_id=self.poll.id, comment_id=create_response.data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(response.data.keys()), ['limit', 'offset','count','next','previous','results'])
+        self.assertEqual([cmt['id'] for cmt in response.data['results']], [create_response.data, self.poll_comment_one.id])
