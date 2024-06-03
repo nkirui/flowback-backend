@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from flowback.comment.selectors import comment_list
+from flowback.comment.selectors import comment_list, comment_detail
 from flowback.comment.services import comment_create, comment_delete, comment_update
 from flowback.common.pagination import LimitOffsetPagination, get_paginated_response
 from flowback.comment.serializers import (CommentListOutputSerializer,
@@ -53,6 +53,8 @@ class CommentDetailAPI(APIView):
     """
     Returns details of a single comment based on the filters provided.
     """
+    lazy_action = comment_detail
+
     def get(self, request, *args, **kwargs):
         """
         Get details of a single comment based on the filters provided.
